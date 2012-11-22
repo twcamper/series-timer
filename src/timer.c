@@ -12,6 +12,7 @@ char *time_s();
 void error(char *msg);
 int should_show_tenth_minute(int minutes);
 
+/*int MINUTE = 2;*/
 int MINUTE = 60;
 char formatted_time[6];
 
@@ -56,6 +57,8 @@ void wait(int minutes)
 
     fflush(stdout);
   }
+  newline();
+  newline();
 }
 
 char *time_s()
@@ -84,8 +87,13 @@ int main(int argc, char *argv[]) {
   for (i = 1; i < argc; i++) {
     newline();
     indent(i);
+    printf("%d) %s minutes", i, argv[i]);
+    newline();
+    indent(i);
     wait(atoi(argv[i]));
   }
   newline();
+  indent(argc - 1);
+  puts("Last");
   return 0;
 }
