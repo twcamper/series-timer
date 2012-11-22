@@ -5,16 +5,15 @@
 #include <string.h>
 #include <errno.h>
 
-float MINUTE = 3;
-float TIME_EVERY = 10;
-
-char formatted_time[6];
-
 void indent(int tabs);
 void newline();
 void wait(int minutes);
 char *time_s();
 void error(char *msg);
+int should_show_tenth_minute(int minutes);
+
+int MINUTE = 60;
+char formatted_time[6];
 
 void error(char *msg)
 {
@@ -32,7 +31,15 @@ void indent(int tabs)
 
 void newline()
 {
-  puts("\n");
+  puts("");
+}
+
+int should_show_tenth_minute(int minutes)
+{
+  if ((minutes > 0) && (minutes % 10 == 0)) {
+    return 1;
+  }
+  return 0;
 }
 
 void wait(int minutes)
@@ -41,10 +48,11 @@ void wait(int minutes)
   {
     sleep(MINUTE);
     minutes--;
-    if ((minutes % (int)TIME_EVERY) == 0)
-      printf("%s", time_s());
-    else
+    if (should_show_tenth_minute(minutes)) {
+      printf(time_s());
+    } else {
       printf(".");
+    }
 
     fflush(stdout);
   }
