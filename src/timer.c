@@ -4,6 +4,7 @@
 #include <time.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/types.h>
 
 void indent(int tabs);
 void newline();
@@ -11,15 +12,34 @@ void wait(int minutes);
 char *time_s();
 void error(char *msg);
 int should_show_tenth_minute(int minutes);
+void kill_player();
 
-/*int MINUTE = 2;*/
-int MINUTE = 60;
+int MINUTE = 2;
+/*int MINUTE = 60;*/
 char formatted_time[6];
-
+char *PLAYER = "./bin/Audirvana";
+char *SAYER = "./bin/say";
+char *KILLER = "./bin/kill.sh";
 void error(char *msg)
 {
-  fprintf(stderr, "%s: %s\n", msg, strerror(errno));
+  fprintf(stderr, "%s: %s %d\n", msg, strerror(errno)), errno;
   exit(1);
+}
+
+void kill_player()
+{
+
+  pid_t pid = fork();
+
+  if (pid == -1)  {
+    error("Can't fork the killer process");
+  }
+
+  if (pid == 0)  {
+    if (execlp("bash", "bash", KILLER, "Audirvana", NULL) == -1) {
+      error("Can't kill process");
+    }
+  }
 }
 
 void indent(int tabs)
@@ -91,6 +111,7 @@ int main(int argc, char *argv[]) {
     newline();
     indent(i);
     wait(atoi(argv[i]));
+    kill_player();
   }
   newline();
   indent(argc - 1);
