@@ -9,7 +9,7 @@
 
 void indent(int tabs);
 void newline();
-void wait(int minutes);
+void wait_showing_progress(int minutes);
 char *time_s();
 void error(char *msg);
 int should_show_tenth_minute(int minutes);
@@ -25,7 +25,7 @@ char *SAYER = "./bin/say";
 char *KILLER = "./bin/kill.sh";
 void error(char *msg)
 {
-  fprintf(stderr, "%s: %s %d\n", msg, strerror(errno)), errno;
+  fprintf(stderr, "%s: %s %d\n", msg, strerror(errno), errno);
   exit(1);
 }
 
@@ -76,14 +76,14 @@ int should_show_tenth_minute(int minutes)
   return 0;
 }
 
-void wait(int minutes)
+void wait_showing_progress(int minutes)
 {
   while ( minutes > 0)
   {
     sleep(MINUTE);
     minutes--;
     if (should_show_tenth_minute(minutes)) {
-      printf(time_s());
+      printf("%s", time_s());
     } else {
       printf(".");
     }
@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
     printf("%d) %s minutes", i, argv[i]);
     newline();
     indent(i);
-    wait(atoi(argv[i]));
+    wait_showing_progress(atoi(argv[i]));
     start_player(player_pid);
   }
   newline();

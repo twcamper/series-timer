@@ -3,7 +3,7 @@
 module Timer
   # calling kill.sh from a bash script echo'd something undesirable that ruby swallows conveniently
   def kill_player
-    system("#{ENV['HOME']}/timer/bin/kill.sh Audirvana")
+    system("#{ENV['HOME']}/series-timer/bin/kill.sh Audirvana")
   end
 
   MINUTE = 60
@@ -34,10 +34,10 @@ if __FILE__ == $0
     puts "#{indent}#{i + 1}) #{arg} minutes"
     Timer.wait(arg.to_i, indent)
     Timer.kill_player
-    system("#{ENV['HOME']}/timer/bin/say_time_and_play_random_tune.sh &")
+    system("#{ENV['HOME']}/series-timer/bin/say_time_and_play_random_tune.sh &")
   end
   indent = "\t" * list.size
   puts "#{indent}Last"
-  system("sleep 5 && say Finished && #{ENV['HOME']}/timer/bin/say_time.sh")
+  system("sleep 5 && say Finished && #{ENV['HOME']}/series-timer/bin/say_time.sh")
   Timer.kill_player
 end

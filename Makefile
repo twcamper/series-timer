@@ -11,7 +11,7 @@ OBJECTS     = $(TEMP:.c=.o)
 EXECUTABLES = $(TEMP:.c=))
 
 #### Build all executable targets, using a 'Static Pattern Rule' (GNU make manual, 4.11) ####
-bin/timer : % : src/timer.o
+bin/series-timer : % : src/series-timer.o
 	$(LD) $< -o $@
 
 #### compiled object files ####

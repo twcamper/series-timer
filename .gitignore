@@ -1,4 +1,4 @@
 *.o
 *.swp
-bin/timer
+bin/*timer
 bin/Audirvana
