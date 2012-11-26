@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
     start_player();
   }
   newline();
-  indent(argc - 1);
+  indent(tabs + 1);
   puts("Last");
   sleep(2);
   kill_all_players();
