@@ -9,7 +9,7 @@
 
 void indent(int tabs);
 void newline();
-void wait_showing_progress(int minutes);
+void wait_showing_progress(int col, int tabs, char *minutes_s);
 char *time_s();
 void error(char *msg);
 int should_show_tenth_minute(int minutes);
@@ -79,8 +79,12 @@ int should_show_tenth_minute(int minutes)
   return 0;
 }
 
-void wait_showing_progress(int minutes)
+void wait_showing_progress(int col, int tabs, char *minutes_s)
 {
+  int minutes = atoi(minutes_s);
+  indent(tabs);
+  printf("%d) %s minutes\n", col, minutes_s);
+  indent(tabs);
   while ( minutes > 0)
   {
     sleep(MINUTE);
@@ -122,10 +126,7 @@ int main(int argc, char *argv[])
   int i, tabs;
   for (i = 1; i < argc; i++) {
     tabs = i - 1;
-    indent(tabs);
-    printf("%d) %s minutes\n", i, argv[i]);
-    indent(tabs);
-    wait_showing_progress(atoi(argv[i]));
+    wait_showing_progress(i, tabs, argv[i]);
     kill_all_players();
     start_player();
   }
