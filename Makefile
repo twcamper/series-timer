@@ -22,17 +22,12 @@ $(OBJECTS) : %.o : %.c
 .gitignore:
 	@~/scripts/add-executables-to-gitignore.sh
 
-clean: clean-obj clean-archives clean-bin
+clean: clean-obj clean-bin
 
-# GNU xargs
-XARGS_RM = xargs --no-run-if-empty rm -fv
+XARGS_RM = xargs rm -fv
 
 clean-obj:
 	@find . -name '*.o' | $(XARGS_RM)
-
-clean-archives:
-	@find . -name '*.a' | $(XARGS_RM)
-	@find . -name '*.so' | $(XARGS_RM)
 
 clean-bin:
 	@find . -perm +111 -type f | grep -vE "\.(git|sh|rb)" | $(XARGS_RM)
