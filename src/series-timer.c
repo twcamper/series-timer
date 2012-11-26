@@ -15,12 +15,12 @@ void error(char *msg);
 int should_show_tenth_minute(int minutes);
 void kill_player(pid_t pid);
 void kill_all_players();
-void start_player(pid_t *pid);
+void start_player();
 
 int MINUTE = 2;
 /*int MINUTE = 60;*/
 char formatted_time[6];
-char *PLAYER = "./bin/Audirvana";
+char *PLAYER = "/Applications/Audirvana.app/Contents/MacOS/Audirvana";
 char *SAYER = "./bin/say";
 char *KILLER = "./bin/kill.sh";
 void error(char *msg)
@@ -29,30 +29,33 @@ void error(char *msg)
   exit(1);
 }
 
-void start_player(pid_t *player_pid)
+void start_player()
 {
-  if (*player_pid)  {
-    kill_player(*player_pid);
-  }
-
   pid_t pid = fork();
 
   if (pid == -1)
     error("Can't fork process to start player");
   if (pid == 0)  {
-    if (execl(PLAYER, PLAYER, NULL) == -1)  {
+    if (execlp("open", "open", "-a", "Audirvana", "../Music/rock/steely_dan/cant_buy_a_thrill/03 - Kings.flac", NULL) == -1)  {
+    /*if (execl(PLAYER, PLAYER, "../Music/rock/steely_dan/cant_buy_a_thrill/03 - Kings.flac", NULL) == -1)  {*/
       error("Can't start player");
     }
   }
-  *player_pid = pid;
-  printf("Started player: %d\n", *player_pid);
+  /*printf("Started player: %d\n", pid);*/
 }
 
-void kill_player(pid_t pid)
+void kill_all_players()
 {
-  printf("Killing player: %d\n", pid);
-  if (kill(pid, SIGKILL) == -1)
-    error("Can't kill player process");
+  pid_t pid = fork();
+
+  if (pid == -1)
+    error("Can't fork process to kill all players");
+
+  if (pid == 0) {
+    /*if (execlp("bash", "bash", KILLER, "Audirvana", NULL) == -1)*/
+    if (execlp("killall", "killall", "-SIGKILL", "Audirvana", NULL) == -1)
+      error("Can't killall players");
+  }
 }
 
 void indent(int tabs)
@@ -114,24 +117,23 @@ char *time_s()
 
 }
 
-int main(int argc, char *argv[]) {
-
-  /*kill_all_players();*/
-  int i;
-  pid_t *player_pid;
-  *player_pid = 0;
+int main(int argc, char *argv[])
+{
+  int i, tabs;
   for (i = 1; i < argc; i++) {
-    newline();
-    indent(i);
-    printf("%d) %s minutes", i, argv[i]);
-    newline();
-    indent(i);
+    tabs = i - 1;
+    indent(tabs);
+    printf("%d) %s minutes\n", i, argv[i]);
+    indent(tabs);
     wait_showing_progress(atoi(argv[i]));
-    start_player(player_pid);
+    kill_all_players();
+    start_player();
   }
   newline();
   indent(argc - 1);
   puts("Last");
-  kill_player(*player_pid);
+  sleep(2);
+  kill_all_players();
+
   return 0;
 }
