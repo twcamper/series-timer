@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <string.h>
+#include <signal.h>
 #include <errno.h>
 #include <sys/types.h>
 
@@ -12,7 +13,9 @@ void wait(int minutes);
 char *time_s();
 void error(char *msg);
 int should_show_tenth_minute(int minutes);
-void kill_player();
+void kill_player(pid_t pid);
+void kill_all_players();
+void start_player(pid_t *pid);
 
 int MINUTE = 2;
 /*int MINUTE = 60;*/
@@ -26,20 +29,30 @@ void error(char *msg)
   exit(1);
 }
 
-void kill_player()
+void start_player(pid_t *player_pid)
 {
+  if (*player_pid)  {
+    kill_player(*player_pid);
+  }
 
   pid_t pid = fork();
 
-  if (pid == -1)  {
-    error("Can't fork the killer process");
-  }
-
+  if (pid == -1)
+    error("Can't fork process to start player");
   if (pid == 0)  {
-    if (execlp("bash", "bash", KILLER, "Audirvana", NULL) == -1) {
-      error("Can't kill process");
+    if (execl(PLAYER, PLAYER, NULL) == -1)  {
+      error("Can't start player");
     }
   }
+  *player_pid = pid;
+  printf("Started player: %d\n", *player_pid);
+}
+
+void kill_player(pid_t pid)
+{
+  printf("Killing player: %d\n", pid);
+  if (kill(pid, SIGKILL) == -1)
+    error("Can't kill player process");
 }
 
 void indent(int tabs)
@@ -103,7 +116,10 @@ char *time_s()
 
 int main(int argc, char *argv[]) {
 
+  /*kill_all_players();*/
   int i;
+  pid_t *player_pid;
+  *player_pid = 0;
   for (i = 1; i < argc; i++) {
     newline();
     indent(i);
@@ -111,10 +127,11 @@ int main(int argc, char *argv[]) {
     newline();
     indent(i);
     wait(atoi(argv[i]));
-    kill_player();
+    start_player(player_pid);
   }
   newline();
   indent(argc - 1);
   puts("Last");
+  kill_player(*player_pid);
   return 0;
 }

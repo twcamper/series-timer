@@ -1,8 +1,6 @@
-#include <unistd.h>
 
 int main()
 {
-  sleep(120);
-
+  for (;;);
   return 0;
 }
