@@ -16,7 +16,7 @@ int should_show_tenth_minute(int minutes);
 void kill_all_players();
 void play(char *song_file);
 void say(char *what);
-char *random_song();
+char* random_song();
 
 #define TIME_FORMAT_24_HR "%H:%M"
 #define TIME_FORMAT_AM_PM "%l:%M %p"
@@ -32,22 +32,51 @@ void error(char *msg)
   exit(1);
 }
 
-char *random_song()
+char* random_song()
 {
-  return "../Music/rock/steely_dan/cant_buy_a_thrill/03 - Kings.flac";
+  int fd[2];
+  if (pipe(fd) == -1)
+    error("Can't create the pipe in function random_song()");
+
+  pid_t pid = fork();
+  if (pid == -1)
+    error("Can't fork random_song process");
+
+  /*are we the child process?*/
+  if (pid == 0)  {
+    /*write to stdout*/
+    dup2(fd[1], 1);
+    /*close the read-end of the pipe, which the child won't use*/
+    close(fd[0]);
+    if (execlp("ruby", "ruby", "./bin/get_random_tune.rb", NULL) == -1)
+      error("Error from script ''");
+  }
+
+  /*read from stdin*/
+  dup2(fd[0], 0);
+  /*close the write-end of the pipe, which the parent doesn't use*/
+  close(fd[1]);
+
+  char *song_path_ = malloc(sizeof(char *));
+  printf("%p\n", song_path_);
+  fscanf(stdin, "%[^\n]",  song_path_);
+
+  return song_path_;
 }
 
 void play(char *song_file)
 {
+  puts(song_file);
   pid_t pid = fork();
-
+  char *vars[] = {"open", "-a", "Audirvana", song_file, NULL};
   if (pid == -1)
     error("Can't fork process to start player");
   if (pid == 0)  {
-    if (execlp("open", "open", "-a", "Audirvana", song_file, NULL) == -1)  {
+    if (execvp("open", vars) == -1)  {
       error("Can't start player");
     }
   }
+  free(song_file);
 }
 
 void say(char *what)
@@ -152,6 +181,7 @@ int main(int argc, char *argv[])
 
     say(time_s(TIME_FORMAT_AM_PM));
 
+    /*char song_[1024];*/
     play(random_song());
   }
   newline();
