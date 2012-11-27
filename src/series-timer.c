@@ -13,9 +13,9 @@ void wait_showing_progress(int col, int tabs, char *minutes_s);
 char *time_s();
 void error(char *msg);
 int should_show_tenth_minute(int minutes);
-void kill_player(pid_t pid);
 void kill_all_players();
-void start_player();
+void play(char *song_file);
+char *random_song();
 
 int MINUTE = 2;
 /*int MINUTE = 60;*/
@@ -29,14 +29,19 @@ void error(char *msg)
   exit(1);
 }
 
-void start_player()
+char *random_song()
+{
+  return "../Music/rock/steely_dan/cant_buy_a_thrill/03 - Kings.flac";
+}
+
+void play(char *song_file)
 {
   pid_t pid = fork();
 
   if (pid == -1)
     error("Can't fork process to start player");
   if (pid == 0)  {
-    if (execlp("open", "open", "-a", "Audirvana", "../Music/rock/steely_dan/cant_buy_a_thrill/03 - Kings.flac", NULL) == -1)  {
+    if (execlp("open", "open", "-a", "Audirvana", song_file, NULL) == -1)  {
     /*if (execl(PLAYER, PLAYER, "../Music/rock/steely_dan/cant_buy_a_thrill/03 - Kings.flac", NULL) == -1)  {*/
       error("Can't start player");
     }
@@ -128,7 +133,7 @@ int main(int argc, char *argv[])
     tabs = i - 1;
     wait_showing_progress(i, tabs, argv[i]);
     kill_all_players();
-    start_player();
+    play(random_song());
   }
   newline();
   indent(tabs + 1);
