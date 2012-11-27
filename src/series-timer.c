@@ -10,13 +10,15 @@
 void indent(int tabs);
 void newline();
 void wait_showing_progress(int col, int tabs, char *minutes_s);
-char *time_s();
+char *time_s(char *format);
 void error(char *msg);
 int should_show_tenth_minute(int minutes);
 void kill_all_players();
 void play(char *song_file);
 char *random_song();
 
+#define TIME_FORMAT_24_HR "%H:%M"
+#define TIME_FORMAT_AM_PM "%l:%M %p"
 int MINUTE = 2;
 /*int MINUTE = 60;*/
 char formatted_time[6];
@@ -95,7 +97,7 @@ void wait_showing_progress(int col, int tabs, char *minutes_s)
     sleep(MINUTE);
     minutes--;
     if (should_show_tenth_minute(minutes)) {
-      printf("%s", time_s());
+      printf("%s", time_s(TIME_FORMAT_24_HR));
     } else {
       printf(".");
     }
@@ -106,10 +108,8 @@ void wait_showing_progress(int col, int tabs, char *minutes_s)
   newline();
 }
 
-char *time_s()
+char *time_s(char *format)
 {
-  char *format = "%H:%M";
-
   time_t t;
   struct tm *tmp;
 
