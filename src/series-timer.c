@@ -15,15 +15,16 @@ void error(char *msg);
 int should_show_tenth_minute(int minutes);
 void kill_all_players();
 void play(char *song_file);
+pid_t say(char *what);
 char *random_song();
 
 #define TIME_FORMAT_24_HR "%H:%M"
 #define TIME_FORMAT_AM_PM "%l:%M %p"
 int MINUTE = 2;
 /*int MINUTE = 60;*/
-char formatted_time[6];
+char formatted_time[9];
 char *PLAYER = "/Applications/Audirvana.app/Contents/MacOS/Audirvana";
-char *SAYER = "./bin/say";
+char *SAYER = "/usr/bin/say";
 char *KILLER = "./bin/kill.sh";
 void error(char *msg)
 {
@@ -44,11 +45,27 @@ void play(char *song_file)
     error("Can't fork process to start player");
   if (pid == 0)  {
     if (execlp("open", "open", "-a", "Audirvana", song_file, NULL) == -1)  {
-    /*if (execl(PLAYER, PLAYER, "../Music/rock/steely_dan/cant_buy_a_thrill/03 - Kings.flac", NULL) == -1)  {*/
       error("Can't start player");
     }
   }
-  /*printf("Started player: %d\n", pid);*/
+}
+
+pid_t say(char *what)
+{
+  int pid_status;
+  pid_t pid = fork();
+
+  if (pid == -1)
+    error("Can't fork process to 'say' something.");
+  if (pid == 0)  {
+    if (execl(SAYER, SAYER, what, NULL) == -1)  {
+      error("Can't start sayer");
+    }
+  }
+  if (waitpid(pid, &pid_status, 0) == -1) {
+    error("Error waiting for child process 'say()'");
+  }
+  return pid;
 }
 
 void kill_all_players()
@@ -129,16 +146,23 @@ char *time_s(char *format)
 int main(int argc, char *argv[])
 {
   int i, tabs;
-  for (i = 1; i < argc; i++) {
-    tabs = i - 1;
+  for (i = 1, tabs = 0; i < argc; i++, tabs++) {
     wait_showing_progress(i, tabs, argv[i]);
+
     kill_all_players();
+
+    say(time_s(TIME_FORMAT_AM_PM));
+
     play(random_song());
   }
   newline();
-  indent(tabs + 1);
+  indent(tabs);
   puts("Last");
   sleep(2);
+  /* 'say' is blocked by Audirvana hogging a mutual audio channel,*/
+  /* which is how we keep the song alive until it's done.*/
+  say("Finished");
+  say(time_s(TIME_FORMAT_AM_PM));
   kill_all_players();
 
   return 0;
