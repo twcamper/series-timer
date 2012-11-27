@@ -15,7 +15,7 @@ void error(char *msg);
 int should_show_tenth_minute(int minutes);
 void kill_all_players();
 void play(char *song_file);
-pid_t say(char *what);
+void say(char *what);
 char *random_song();
 
 #define TIME_FORMAT_24_HR "%H:%M"
@@ -50,7 +50,7 @@ void play(char *song_file)
   }
 }
 
-pid_t say(char *what)
+void say(char *what)
 {
   int pid_status;
   pid_t pid = fork();
@@ -65,7 +65,6 @@ pid_t say(char *what)
   if (waitpid(pid, &pid_status, 0) == -1) {
     error("Error waiting for child process 'say()'");
   }
-  return pid;
 }
 
 void kill_all_players()
