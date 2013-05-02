@@ -3,12 +3,10 @@
 #include <unistd.h>
 #include <time.h>
 #include <string.h>
-#include <signal.h>
 #include <errno.h>
 #include <sys/types.h>
 
 void indent(int tabs);
-void newline();
 void wait_showing_progress(int col, int tabs, char *minutes_s);
 char *time_s(char *format);
 void error(char *msg);
@@ -16,67 +14,51 @@ int should_show_tenth_minute(int minutes);
 void kill_all_players();
 void play(char *song_file);
 void say(char *what);
-char* random_song();
+char* random_song(void);
 
 #define TIME_FORMAT_24_HR "%H:%M"
 #define TIME_FORMAT_AM_PM "%l:%M %p"
-int MINUTE = 2;
-/*int MINUTE = 60;*/
-char formatted_time[9];
-char *PLAYER = "/Applications/Audirvana.app/Contents/MacOS/Audirvana";
-char *SAYER = "/usr/bin/say";
-char *KILLER = "./bin/kill.sh";
+#define NEWLINE printf("\n")
+/* #define  MINUTE  2 */
+#define MINUTE  60
+#define PLAYER "/Applications/Audirvana.app/Contents/MacOS/Audirvana"
+#define SAYER  "/usr/bin/say"
+#define KILLER "./bin/kill.sh"
 void error(char *msg)
 {
   fprintf(stderr, "%s: %s %d\n", msg, strerror(errno), errno);
   exit(1);
 }
 
-char* random_song()
+char* random_song(void)
 {
-  int fd[2];
-  if (pipe(fd) == -1)
-    error("Can't create the pipe in function random_song()");
+  FILE *pipe;
+  char *cmd = "ruby ./bin/get_random_tune.rb";
+  static char song_path[FILENAME_MAX];
+  if ((pipe = popen(cmd, "r")) == NULL)
+    error("create pipe");
 
-  pid_t pid = fork();
-  if (pid == -1)
-    error("Can't fork random_song process");
+  if (fgets(song_path, FILENAME_MAX + 1, pipe) == NULL)
+    error("read from pipe");
 
-  /*are we the child process?*/
-  if (pid == 0)  {
-    /*write to stdout*/
-    dup2(fd[1], 1);
-    /*close the read-end of the pipe, which the child won't use*/
-    close(fd[0]);
-    if (execlp("ruby", "ruby", "./bin/get_random_tune.rb", NULL) == -1)
-      error("Error from script ''");
-  }
+  if (pclose(pipe) == EOF)
+    error("close pipe");
 
-  /*read from stdin*/
-  dup2(fd[0], 0);
-  /*close the write-end of the pipe, which the parent doesn't use*/
-  close(fd[1]);
-
-  char *song_path_ = malloc(sizeof(char *));
-  printf("%p\n", song_path_);
-  fscanf(stdin, "%[^\n]",  song_path_);
-
-  return song_path_;
+  song_path[strlen(song_path) - 1] = '\0';
+  return song_path;
 }
 
 void play(char *song_file)
 {
-  puts(song_file);
   pid_t pid = fork();
-  char *vars[] = {"open", "-a", "Audirvana", song_file, NULL};
   if (pid == -1)
     error("Can't fork process to start player");
   if (pid == 0)  {
+    char *vars[] = {"open", "-a", "Audirvana", song_file, NULL};
     if (execvp("open", vars) == -1)  {
       error("Can't start player");
     }
   }
-  free(song_file);
 }
 
 void say(char *what)
@@ -104,8 +86,7 @@ void kill_all_players()
     error("Can't fork process to kill all players");
 
   if (pid == 0) {
-    /*if (execlp("bash", "bash", KILLER, "Audirvana", NULL) == -1)*/
-    if (execlp("killall", "killall", "-SIGKILL", "Audirvana", NULL) == -1)
+    if (execlp("bash", "bash", KILLER, "Audirvana", NULL) == -1)
       error("Can't killall players");
   }
 }
@@ -116,11 +97,6 @@ void indent(int tabs)
   for (i = 0; i < tabs; i++) {
     printf("\t");
   }
-}
-
-void newline()
-{
-  puts("");
 }
 
 int should_show_tenth_minute(int minutes)
@@ -149,21 +125,22 @@ void wait_showing_progress(int col, int tabs, char *minutes_s)
 
     fflush(stdout);
   }
-  newline();
-  newline();
+  NEWLINE;
+  NEWLINE;
 }
 
 char *time_s(char *format)
 {
   time_t t;
   struct tm *tmp;
+  static char formatted_time[9];
 
   t = time(NULL);
   tmp = localtime(&t);
   if (tmp == NULL)
     error("Can't get localtime");
 
-  if (strftime(formatted_time, sizeof(formatted_time), format, tmp) == -1) {
+  if (strftime(formatted_time, sizeof(formatted_time), format, tmp) == (size_t)-1) {
     error("strftime returned -1");
   }
 
@@ -181,17 +158,20 @@ int main(int argc, char *argv[])
 
     say(time_s(TIME_FORMAT_AM_PM));
 
-    /*char song_[1024];*/
     play(random_song());
   }
-  newline();
+
+  NEWLINE;
   indent(tabs);
   puts("Last");
+
   sleep(2);
   /* 'say' is blocked by Audirvana hogging a mutual audio channel,*/
   /* which is how we keep the song alive until it's done.*/
   say("Finished");
+
   say(time_s(TIME_FORMAT_AM_PM));
+
   kill_all_players();
 
   return 0;

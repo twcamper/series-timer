@@ -1,8 +1,8 @@
 # tested with GNU make 3.81
 SHELL   = /usr/bin/env sh
-CC      = gcc
-CFLAGS  = -g
-LD      = gcc
+CC      = clang
+CFLAGS  = -g  -Wall -Wextra -pedantic -std=c99
+LD      = clang
 
 #### targets and prerequisites ####
 #### CHAPTER 08 HAS ITS OWN MAKEFILE ####
