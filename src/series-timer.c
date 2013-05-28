@@ -12,52 +12,63 @@ char *time_s(char *format);
 void error(char *msg);
 int should_show_tenth_minute(int minutes);
 void kill_all_players();
-void play(char *song_file);
+void play_random_song(void);
 void say(char *what);
-char* random_song(void);
 
 #define TIME_FORMAT_24_HR "%H:%M"
 #define TIME_FORMAT_AM_PM "%l:%M %p"
 #define NEWLINE printf("\n")
 /* #define  MINUTE  2 */
 #define MINUTE  60
-#define PLAYER "/Applications/Audirvana.app/Contents/MacOS/Audirvana"
 #define SAYER  "/usr/bin/say"
 #define KILLER "./bin/kill.sh"
+#define PLAYER "~/prf/bin/prf"
+
+/* temporary config hack */
+static int expand_home_dir(char *filename, char **buffer)
+{
+  size_t len;
+  char *tilde = strchr(filename, '~');
+  if (tilde) {
+    char *home = getenv("HOME");
+    len = strlen(tilde + 1);
+    size_t home_len = strlen(home);
+    /* make sure we'll have room */
+    if (home_len + strlen(filename) > FILENAME_MAX) {
+      errno = ENAMETOOLONG;
+      fprintf(stderr, "%s:%d expand_home_dir() %s: '%s' + '%s'\n", __FILE__, __LINE__, strerror(errno), home, tilde + 1);
+      return -1;
+    }
+    *buffer = malloc(home_len + len + 1);
+    strncpy(*buffer, home, home_len + 1);
+    strncat(*buffer, tilde + 1, len + 1);
+  } else {
+    len = strlen(filename);
+    *buffer = malloc(len + 1);
+    strncpy(*buffer, filename, len + 1);
+  }
+  return 0;
+}
 void error(char *msg)
 {
   fprintf(stderr, "%s: %s %d\n", msg, strerror(errno), errno);
   exit(1);
 }
 
-char* random_song(void)
-{
-  FILE *pipe;
-  char *cmd = "ruby ./bin/get_random_tune.rb";
-  static char song_path[FILENAME_MAX];
-  if ((pipe = popen(cmd, "r")) == NULL)
-    error("create pipe");
-
-  if (fgets(song_path, FILENAME_MAX + 1, pipe) == NULL)
-    error("read from pipe");
-
-  if (pclose(pipe) == EOF)
-    error("close pipe");
-
-  song_path[strlen(song_path) - 1] = '\0';
-  return song_path;
-}
-
-void play(char *song_file)
+void play_random_song(void)
 {
   pid_t pid = fork();
+  errno = 0;
   if (pid == -1)
     error("Can't fork process to start player");
   if (pid == 0)  {
-    char *vars[] = {"open", "-a", "Audirvana", song_file, NULL};
-    if (execvp("open", vars) == -1)  {
+    char *player;
+    expand_home_dir(PLAYER, &player);
+    errno = 0;
+    if (execl(player, player, NULL) == -1)  {
       error("Can't start player");
     }
+    free(player);
   }
 }
 
@@ -86,7 +97,7 @@ void kill_all_players()
     error("Can't fork process to kill all players");
 
   if (pid == 0) {
-    if (execlp("bash", "bash", KILLER, "Audirvana", NULL) == -1)
+    if (execlp("bash", "bash", KILLER, "prf", NULL) == -1)
       error("Can't killall players");
   }
 }
@@ -158,7 +169,7 @@ int main(int argc, char *argv[])
 
     say(time_s(TIME_FORMAT_AM_PM));
 
-    play(random_song());
+    play_random_song();
   }
 
   NEWLINE;
