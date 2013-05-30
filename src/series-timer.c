@@ -9,7 +9,7 @@
 void indent(int tabs);
 void wait_showing_progress(int col, int tabs, char *minutes_s);
 char *time_s(char *format);
-void error(char *msg);
+void exit_error(char *msg);
 int should_show_tenth_minute(int minutes);
 void kill_all_players();
 void play_random_song(void);
@@ -49,9 +49,9 @@ static int expand_home_dir(char *filename, char **buffer)
   }
   return 0;
 }
-void error(char *msg)
+void exit_error(char *msg)
 {
-  fprintf(stderr, "%s: %s %d\n", msg, strerror(errno), errno);
+  perror(msg);
   exit(1);
 }
 
@@ -60,13 +60,13 @@ void play_random_song(void)
   pid_t pid = fork();
   errno = 0;
   if (pid == -1)
-    error("Can't fork process to start player");
+    exit_error("Can't fork process to start player");
   if (pid == 0)  {
     char *player;
     expand_home_dir(PLAYER, &player);
     errno = 0;
     if (execl(player, player, NULL) == -1)  {
-      error("Can't start player");
+      exit_error("Can't start player");
     }
     free(player);
   }
@@ -78,14 +78,14 @@ void say(char *what)
   pid_t pid = fork();
 
   if (pid == -1)
-    error("Can't fork process to 'say' something.");
+    exit_error("Can't fork process to 'say' something.");
   if (pid == 0)  {
     if (execl(SAYER, SAYER, what, NULL) == -1)  {
-      error("Can't start sayer");
+      exit_error("Can't start sayer");
     }
   }
   if (waitpid(pid, &pid_status, 0) == -1) {
-    error("Error waiting for child process 'say()'");
+    exit_error("Error waiting for child process 'say()'");
   }
 }
 
@@ -93,12 +93,14 @@ void kill_all_players()
 {
   pid_t pid = fork();
 
+  errno = 0;
   if (pid == -1)
-    error("Can't fork process to kill all players");
+    exit_error("Can't fork process to kill all players");
 
   if (pid == 0) {
-    if (execlp("bash", "bash", KILLER, "prf", NULL) == -1)
-      error("Can't killall players");
+    errno = 0;
+    if (execlp("bash", "bash", KILLER, "'prf|Audirvana|VLC'", NULL) == -1)
+      exit_error("Can't killall players");
   }
 }
 
@@ -149,10 +151,10 @@ char *time_s(char *format)
   t = time(NULL);
   tmp = localtime(&t);
   if (tmp == NULL)
-    error("Can't get localtime");
+    exit_error("Can't get localtime");
 
   if (strftime(formatted_time, sizeof(formatted_time), format, tmp) == (size_t)-1) {
-    error("strftime returned -1");
+    exit_error("strftime returned -1");
   }
 
   return formatted_time;
@@ -182,8 +184,6 @@ int main(int argc, char *argv[])
   say("Finished");
 
   say(time_s(TIME_FORMAT_AM_PM));
-
-  kill_all_players();
 
   return 0;
 }
