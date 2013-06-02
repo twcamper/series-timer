@@ -123,8 +123,12 @@ void kill_player(pid_t pid)
   if (pid) {
     errno = 0;
     if (kill(pid, SIGINT) == -1) {
-      fprintf(stderr, "pid %d\t", pid);
-      exit_error("Can't kill player");
+      if (errno != ESRCH) {  /* don't complain and quit if the process isn't found,
+                              * since that's the normal case.
+                              */
+        fprintf(stderr, "pid %d\t", pid);
+        exit_error("Can't kill player:");
+      }
     }
   }
 }
