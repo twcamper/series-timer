@@ -23,34 +23,9 @@ void say(char *what);
 #define NEWLINE printf("\n")
 /* #define  MINUTE  2 */
 #define MINUTE  60
-#define SAYER  "/usr/bin/say"
-#define PLAYER "~/prf/bin/prf"
+#define SAYER  "say"
+#define PLAYER "prf"
 
-/* temporary config hack */
-static int expand_home_dir(char *filename, char **buffer)
-{
-  size_t len;
-  char *tilde = strchr(filename, '~');
-  if (tilde) {
-    char *home = getenv("HOME");
-    len = strlen(tilde + 1);
-    size_t home_len = strlen(home);
-    /* make sure we'll have room */
-    if (home_len + strlen(filename) > FILENAME_MAX) {
-      errno = ENAMETOOLONG;
-      fprintf(stderr, "%s:%d expand_home_dir() %s: '%s' + '%s'\n", __FILE__, __LINE__, strerror(errno), home, tilde + 1);
-      return -1;
-    }
-    *buffer = malloc(home_len + len + 1);
-    strncpy(*buffer, home, home_len + 1);
-    strncat(*buffer, tilde + 1, len + 1);
-  } else {
-    len = strlen(filename);
-    *buffer = malloc(len + 1);
-    strncpy(*buffer, filename, len + 1);
-  }
-  return 0;
-}
 void exit_error(char *msg)
 {
   perror(msg);
@@ -68,13 +43,10 @@ void *play_random_song(void *param)
   if (SERIES_TIMER__player_pid == -1)
     exit_error("Can't fork process to start player");
   if (SERIES_TIMER__player_pid == 0)  {
-    char *player;
-    expand_home_dir(PLAYER, &player);
     errno = 0;
-    if (execl(player, player, NULL) == -1)  {
+    if (execlp(PLAYER, PLAYER, NULL) == -1)  {
       exit_error("Can't start player");
     }
-    free(player);
   }
   errno = 0;
   if (waitpid(SERIES_TIMER__player_pid, &pid_status, 0) == -1) {
@@ -93,7 +65,7 @@ void say(char *what)
     exit_error("Can't fork process to 'say' something.");
   if (pid == 0)  {
     errno = 0;
-    if (execl(SAYER, SAYER, what, NULL) == -1)  {
+    if (execlp(SAYER, SAYER, what, NULL) == -1)  {
       exit_error("Can't start sayer");
     }
   }
