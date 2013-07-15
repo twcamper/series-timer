@@ -24,7 +24,6 @@ void say(char *what);
 /* #define  MINUTE  2 */
 #define MINUTE  60
 #define SAYER  "/usr/bin/say"
-#define KILLER "./bin/kill.sh"
 #define PLAYER "~/prf/bin/prf"
 
 /* temporary config hack */
@@ -112,8 +111,9 @@ void kill_all_players()
     exit_error("Can't fork process to kill all players");
 
   if (pid == 0) {
+    char *kill_script = "for p in `pgrep 'Audirvana|VLC'`;do kill -9 $p; done";
     errno = 0;
-    if (execlp("bash", "bash", KILLER, "'Audirvana|VLC'", NULL) == -1)
+    if (execlp("bash", "bash", "-c", kill_script, NULL) == -1)
       exit_error("Can't killall players");
   }
 }
