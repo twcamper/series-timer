@@ -12,7 +12,7 @@ void indent(int tabs);
 void wait_showing_progress(int col, int tabs, char *minutes_s);
 char *time_s(char *format);
 void exit_error(char *msg);
-int should_show_tenth_minute(int minutes);
+int should_print_tenth_minute(int minutes);
 void kill_all_players(void);
 void kill_player(pid_t);
 void *play_random_song(void *);
@@ -113,17 +113,16 @@ void indent(int tabs)
   }
 }
 
-int should_show_tenth_minute(int minutes)
+int should_print_tenth_minute(int minutes)
 {
-  if ((minutes > 0) && (minutes % 10 == 0)) {
-    return 1;
-  }
+  if (minutes % 10 == 0) return 1;
   return 0;
 }
 
 void wait_showing_progress(int col, int tabs, char *minutes_s)
 {
   int minutes = atoi(minutes_s);
+  int elapsed = 0;
   indent(tabs);
   printf("%d) %s %s\n", col, minutes_s, (minutes == 1 ? "minute" : "minutes"));
   indent(tabs);
@@ -131,7 +130,8 @@ void wait_showing_progress(int col, int tabs, char *minutes_s)
   {
     sleep(MINUTE);
     minutes--;
-    if (should_show_tenth_minute(minutes)) {
+    elapsed++;
+    if (should_print_tenth_minute(elapsed)) {
       printf("%s", time_s(TIME_FORMAT_24_HR));
     } else {
       printf(".");
